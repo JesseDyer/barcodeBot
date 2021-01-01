@@ -52,7 +52,6 @@ def decideFormat(sku):
 
 def createBarcode(sku):
     # write a flat file, BMP format, of the barcode.
-    print(decideFormat(sku))
     image = barcode.get(decideFormat(sku), sku, writer=ImageWriter())
     filename = image.save(decideFormat(sku), 
         {"module_width":0.2,
@@ -82,16 +81,11 @@ def displayImage(file):
     Himage = Image.open(file)
     epd.display(epd.getbuffer(Himage))
 
-
 def showCode(code):
     # Generate the file, manipulate it, and show it.
     file=createBarcode(code)
     rotateImage(file)
     displayImage(file)
-
-    
-    
-
 
 ################################################################################
 # Test it out.
@@ -107,7 +101,11 @@ epd.Clear(0xFF)
 time_image = Image.new('1', (epd.height, epd.width), 255)
 time_draw = ImageDraw.Draw(time_image)
 time_draw.rectangle((10, 10, 120, 50), fill = 255)
-time_draw.text((10, 10), 'IP 192.168.3.178', font = font24, fill = 0)
+time_draw.text((10, 10), 'barcodeBot!', font = font24, fill = 0)
+time_draw.text((10, 34), '   IP 192.168.3.178', font = font24, fill = 0)
+time_draw.text((10, 58), '   Ready for Run', font = font24, fill = 0)
+time_draw.text((10, 82), '        Jesse Dyer', font = font18, fill = 0)
+time_draw.text((10, 102), '        ECR Software Corporation', font = font18, fill = 0)
 newimage = time_image.crop([10, 10, 120, 50])
 time_image.paste(newimage, (10,10))  
 epd.display(epd.getbuffer(time_image))

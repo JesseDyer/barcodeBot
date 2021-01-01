@@ -3,10 +3,14 @@
 """ Barcode Builder - trying to get the bot showing images.
 
 Handy Links:
-    https://github.com/JesseDyer/barcodeBot - This Library
-    https://pillow.readthedocs.io/en/stable/handbook/tutorial.html - Manipulating Images
-    https://www.waveshare.com/wiki/2.9inch_e-Paper_Module - My Display
-    https://python-barcode.readthedocs.io/en/stable/writers/index.html - Barcode Library
+    https://github.com/JesseDyer/barcodeBot
+        - This Library
+    https://pillow.readthedocs.io/en/stable/handbook/tutorial.html
+        - Manipulating Images
+    https://www.waveshare.com/wiki/2.9inch_e-Paper_Module
+        - My Display
+    https://python-barcode.readthedocs.io/en/stable/writers/index.html
+        - Barcode Library
 
     TODO: If the code is UPC-A valid, use that.  If not, fall back to Code128
     TODO: Add threading
@@ -15,7 +19,9 @@ Handy Links:
     TODO: Tie it all together; when idle, show wireless state on boot.  Provide 
         web interface to set codes, interval, and paste box for codes.
 """
-
+# Imports
+import checkdigit
+from checkdigit import upc
 import barcode
 from barcode.writer import ImageWriter
 import os
@@ -24,9 +30,7 @@ from waveshare_epd import epd2in9
 from time import sleep
 from PIL import Image,ImageDraw,ImageFont, ImageOps
 import PIL
-
-
-
+import re
 
 # Initialize the display.
 epd = epd2in9.EPD()
@@ -35,10 +39,23 @@ epd.Clear(0xFF)
 font24 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 24)
 font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
 
-def createCode128(sku):
+# Functions
+def decideFormat(sku):
+    # Figure out which symbology to print
+    if len(sku) not in (12, 13) or len(re.sub(r'\d', '', sku)) > 0:
+        return 'code128'
+    elif upc.validate(sku) and len(sku) == 12:
+        return 'upca'
+    elif upc.validate(sku) and len(sku) == 13:
+        return 'ean13'
+    else:
+        return 'code128'
+
+def createBarcode(sku):
     # write a flat file, BMP format, of the barcode.
-    code128 = barcode.get('code128', sku, writer=ImageWriter())
-    filename = code128.save('code128', 
+    print(decideFormat(sku))
+    image = barcode.get(decideFormat(sku), sku, writer=ImageWriter())
+    filename = image.save(decideFormat(sku), 
         {"module_width":0.2,
         "module_height":4,
         "text_distance":2,
@@ -46,7 +63,6 @@ def createCode128(sku):
         "dpi":250,
         "format":"BMP"
         })
-    print(filename)
     return filename
 
 def rotateImage(file):
@@ -63,19 +79,36 @@ def rotateImage(file):
     im1.save(file)
 
 def displayImage(file):
+    # Push the image to the display
     Himage = Image.open(file)
     epd.display(epd.getbuffer(Himage))
 
 
 def showCode(code):
-    file=createCode128(code)
+    # Generate the file, manipulate it, and show it.
+    file=createBarcode(code)
     rotateImage(file)
     displayImage(file)
 
-for x in range(1000, 2000):
-    showCode(str(x).zfill(12))
+    
+    
+
+
+################################################################################
+# Test it out.
+skus = ('1234567890120',
+    '123456789012',
+    '00123456789')
+for x in skus:
+    showCode(str(x))
     sleep(5)
 
-
-
-
+epd.init(epd.lut_partial_update)    
+epd.Clear(0xFF)
+time_image = Image.new('1', (epd.height, epd.width), 255)
+time_draw = ImageDraw.Draw(time_image)
+time_draw.rectangle((10, 10, 120, 50), fill = 255)
+time_draw.text((10, 10), 'IP 192.168.3.178', font = font24, fill = 0)
+newimage = time_image.crop([10, 10, 120, 50])
+time_image.paste(newimage, (10,10))  
+epd.display(epd.getbuffer(time_image))

@@ -12,7 +12,6 @@ Handy Links:
     https://python-barcode.readthedocs.io/en/stable/writers/index.html
         - Barcode Library
 
-    TODO: If the code is UPC-A valid, use that.  If not, fall back to Code128
     TODO: Add threading
     TODO: Add Cherry Pi web interface
     TODO: Show IP address when Idle

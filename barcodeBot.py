@@ -14,11 +14,11 @@ Handy Links:
 
     TODO: Add threading
     TODO: Add Cherry Pi web interface
-    TODO: Show IP address when Idle
     TODO: Tie it all together; when idle, show wireless state on boot.  Provide 
         web interface to set codes, interval, and paste box for codes.
 """
 # Imports
+from netifaces import interfaces, ifaddresses, AF_INET
 import checkdigit
 from checkdigit import upc
 import barcode
@@ -39,6 +39,25 @@ font24 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 24)
 font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
 
 # Functions
+
+def getIP():
+    #  Get the Wireless address.  
+    #  Failing that, get Ethernet
+    #  Failing that, return false
+
+    address = False
+    
+    addresses = ifaddresses('wlan0')
+    if 2 in addresses.keys():
+        address = addresses[2][0]['addr']
+    else:
+        addresses = ifaddresses('eth0')
+        if 2 in addresses.keys():
+            address = addresses[2][0]['addr']
+    
+    return address
+    
+
 def decideFormat(sku):
     # Figure out which symbology to print
     if len(sku) not in (12, 13) or len(re.sub(r'\d', '', sku)) > 0:
@@ -94,18 +113,25 @@ skus = ('1234567890120',
     '00123456789')
 for x in skus:
     showCode(str(x))
-    sleep(5)
+    sleep(2)
 
 epd.init(epd.lut_partial_update)    
 epd.Clear(0xFF)
 time_image = Image.new('1', (epd.height, epd.width), 255)
 time_draw = ImageDraw.Draw(time_image)
 time_draw.rectangle((10, 10, 120, 50), fill = 255)
-time_draw.text((10, 10), 'barcodeBot!', font = font24, fill = 0)
-time_draw.text((10, 34), '   IP 192.168.3.178', font = font24, fill = 0)
-time_draw.text((10, 58), '   Ready for Run', font = font24, fill = 0)
+time_draw.text((10, 10), 'barcodeBot', font = font24, fill = 0)
+address = getIP()
+if address:
+    time_draw.text((10, 34), '   IP ' + address, font = font24, fill = 0)
+else:
+    time_draw.text((10, 34), '   NO IP Address', font = font24, fill = 0)
+time_draw.rectangle((10, 62, 286, 65), fill = 0)
 time_draw.text((10, 82), '        Jesse Dyer', font = font18, fill = 0)
-time_draw.text((10, 102), '        ECR Software Corporation', font = font18, fill = 0)
+time_draw.text((10, 102),
+    '        ECR Software Corporation',
+    font = font18,
+    fill = 0)
 newimage = time_image.crop([10, 10, 120, 50])
 time_image.paste(newimage, (10,10))  
 epd.display(epd.getbuffer(time_image))

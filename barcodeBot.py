@@ -106,6 +106,29 @@ def showCode(code):
     rotateImage(file)
     displayImage(file)
 
+def splashScreen():
+    epd.init(epd.lut_partial_update)    
+    epd.Clear(0xFF)
+    time_image = Image.new('1', (epd.height, epd.width), 255)
+    time_draw = ImageDraw.Draw(time_image)
+    time_draw.rectangle((10, 10, 120, 50), fill = 255)
+    time_draw.text((10, 10), 'barcodeBot', font = font24, fill = 0)
+    address = getIP()
+    if address:
+        time_draw.text((10, 34), '   IP ' + address, font = font24, fill = 0)
+    else:
+        time_draw.text((10, 34), '   NO IP Address', font = font24, fill = 0)
+    time_draw.rectangle((10, 62, 286, 65), fill = 0)
+    time_draw.text((10, 82), '        Jesse Dyer', font = font18, fill = 0)
+    time_draw.text((10, 102),
+        '        ECR Software Corporation',
+        font = font18,
+        fill = 0)
+    newimage = time_image.crop([10, 10, 120, 50])
+    time_image.paste(newimage, (10,10))  
+    epd.display(epd.getbuffer(time_image))
+
+
 ################################################################################
 # Test it out.
 skus = ('1234567890120',
@@ -114,24 +137,5 @@ skus = ('1234567890120',
 for x in skus:
     showCode(str(x))
     sleep(2)
+splashScreen()
 
-epd.init(epd.lut_partial_update)    
-epd.Clear(0xFF)
-time_image = Image.new('1', (epd.height, epd.width), 255)
-time_draw = ImageDraw.Draw(time_image)
-time_draw.rectangle((10, 10, 120, 50), fill = 255)
-time_draw.text((10, 10), 'barcodeBot', font = font24, fill = 0)
-address = getIP()
-if address:
-    time_draw.text((10, 34), '   IP ' + address, font = font24, fill = 0)
-else:
-    time_draw.text((10, 34), '   NO IP Address', font = font24, fill = 0)
-time_draw.rectangle((10, 62, 286, 65), fill = 0)
-time_draw.text((10, 82), '        Jesse Dyer', font = font18, fill = 0)
-time_draw.text((10, 102),
-    '        ECR Software Corporation',
-    font = font18,
-    fill = 0)
-newimage = time_image.crop([10, 10, 120, 50])
-time_image.paste(newimage, (10,10))  
-epd.display(epd.getbuffer(time_image))
